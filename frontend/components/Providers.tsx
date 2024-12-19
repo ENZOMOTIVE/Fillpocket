@@ -1,28 +1,39 @@
 'use client'
 
 import { createContext, useState, useEffect, useContext } from 'react'
-import { ethers } from 'ethers'
+import { BrowserProvider, JsonRpcSigner } from 'ethers'
 
-const WalletContext = createContext<{
+interface WalletContextType {
   account: string | null
+  provider: BrowserProvider | null
+  signer: JsonRpcSigner | null
   connect: () => Promise<void>
   switchNetwork: (chainId: string) => Promise<void>
-}>({
+}
+
+const WalletContext = createContext<WalletContextType>({
   account: null,
+  provider: null,
+  signer: null,
   connect: async () => {},
   switchNetwork: async () => {},
 })
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [account, setAccount] = useState<string | null>(null)
+  const [provider, setProvider] = useState<BrowserProvider | null>(null)
+  const [signer, setSigner] = useState<JsonRpcSigner | null>(null)
 
   const connect = async () => {
     if (typeof window.ethereum !== 'undefined') {
       try {
         await window.ethereum.request({ method: 'eth_requestAccounts' })
-        const provider = new ethers.BrowserProvider(window.ethereum)
-        const signer = await provider.getSigner()
-        const address = await signer.getAddress()
+        const browserProvider = new BrowserProvider(window.ethereum)
+        const newSigner = await browserProvider.getSigner()
+        const address = await newSigner.getAddress()
+        
+        setProvider(browserProvider)
+        setSigner(newSigner)
         setAccount(address)
       } catch (error) {
         console.error('Failed to connect wallet:', error)
@@ -47,14 +58,44 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (typeof window.ethereum !== 'undefined') {
-      window.ethereum.on('accountsChanged', (accounts: string[]) => {
-        setAccount(accounts[0] || null)
+      // Handle account changes
+      window.ethereum.on('accountsChanged', async (accounts: string[]) => {
+        if (accounts.length === 0) {
+          setAccount(null)
+          setProvider(null)
+          setSigner(null)
+        } else {
+          setAccount(accounts[0])
+          // Reconnect with new account
+          const browserProvider = new BrowserProvider(window.ethereum)
+          const newSigner = await browserProvider.getSigner()
+          setProvider(browserProvider)
+          setSigner(newSigner)
+        }
       })
+
+      // Check if already connected
+      window.ethereum.request({ method: 'eth_accounts' })
+        .then(async (accounts: string[]) => {
+          if (accounts.length > 0) {
+            const browserProvider = new BrowserProvider(window.ethereum)
+            const newSigner = await browserProvider.getSigner()
+            setProvider(browserProvider)
+            setSigner(newSigner)
+            setAccount(accounts[0])
+          }
+        })
+    }
+
+    return () => {
+      if (window.ethereum) {
+        window.ethereum.removeAllListeners('accountsChanged')
+      }
     }
   }, [])
 
   return (
-    <WalletContext.Provider value={{ account, connect, switchNetwork }}>
+    <WalletContext.Provider value={{ account, provider, signer, connect, switchNetwork }}>
       {children}
     </WalletContext.Provider>
   )

@@ -30,7 +30,7 @@ contract ClinicalTrialsPlatform is Ownable {
     event ReviewSubmitted(uint256 indexed trialId, address indexed user, string review);
     event RewardDistributed(address indexed user, uint256 amount);
 
-    constructor(address _rewardToken) {
+    constructor(address _rewardToken) Ownable(msg.sender) {
         rewardToken = IERC20(_rewardToken);
     }
 
@@ -117,4 +117,3 @@ contract ClinicalTrialsPlatform is Ownable {
         require(rewardToken.transfer(owner(), _amount), "Failed to withdraw unused rewards");
     }
 }
-

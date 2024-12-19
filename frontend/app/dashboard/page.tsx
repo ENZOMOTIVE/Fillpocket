@@ -1,81 +1,76 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { formatEther } from 'ethers'
 import { useWallet } from '@/components/Providers'
 import { getContractInterface } from '@/utils/contractInterface'
-import { ethers } from 'ethers'
 
 interface Trial {
   id: number
   name: string
   description: string
-  reward: number
+  reward: string
 }
 
 export default function Dashboard() {
-  const { account } = useWallet()
+  const { account, provider } = useWallet()
   const [trials, setTrials] = useState<Trial[]>([])
-  const [userRewards, setUserRewards] = useState<number>(0)
+  const [userRewards, setUserRewards] = useState<string>('0')
 
   useEffect(() => {
-    if (account) {
+    if (account && provider) {
       fetchTrials()
       fetchUserRewards()
     }
-  }, [account])
+  }, [account, provider])
 
   const fetchTrials = async () => {
-    if (typeof window.ethereum !== 'undefined') {
-      const provider = new ethers.providers.Web3Provider(window.ethereum)
-      const contract = getContractInterface(provider)
-      
-      try {
-        const availableTrialIds = await contract.getAvailableTrials()
-        const trialPromises = availableTrialIds.map(async (id: number) => {
-          const trialDetails = await contract.getTrialDetails(id)
-          return {
-            id: trialDetails.id.toNumber(),
-            name: trialDetails.name,
-            description: trialDetails.description,
-            reward: ethers.utils.formatEther(trialDetails.reward)
-          }
-        })
-        const fetchedTrials = await Promise.all(trialPromises)
-        setTrials(fetchedTrials)
-      } catch (error) {
-        console.error("Error fetching trials:", error)
-      }
+    if (!provider || !account) return
+    
+    try {
+      const contract = await getContractInterface(provider)
+      const availableTrialIds = await contract.getAllTrials()
+      const trialPromises = availableTrialIds.map(async (id: bigint) => {
+        const trialDetails = await contract.getTrialDetails(id)
+        return {
+          id: Number(trialDetails.id),
+          name: trialDetails.name,
+          description: trialDetails.description,
+          reward: formatEther(trialDetails.reward)
+        }
+      })
+      const fetchedTrials = await Promise.all(trialPromises)
+      setTrials(fetchedTrials)
+    } catch (error) {
+      console.error("Error fetching trials:", error)
     }
   }
 
   const fetchUserRewards = async () => {
-    if (typeof window.ethereum !== 'undefined' && account) {
-      const provider = new ethers.providers.Web3Provider(window.ethereum)
-      const contract = getContractInterface(provider)
-      
-      try {
-        const rewards = await contract.getUserRewards(account)
-        setUserRewards(ethers.utils.formatEther(rewards))
-      } catch (error) {
-        console.error("Error fetching user rewards:", error)
-      }
+    if (!provider || !account) return
+    
+    try {
+      const contract = await getContractInterface(provider)
+      const rewards = await contract.getUserRewards(account)
+      setUserRewards(formatEther(rewards))
+    } catch (error) {
+      console.error("Error fetching user rewards:", error)
+      setUserRewards('0')
     }
   }
 
   const participateInTrial = async (trialId: number) => {
-    if (typeof window.ethereum !== 'undefined') {
-      const provider = new ethers.providers.Web3Provider(window.ethereum)
-      const contract = getContractInterface(provider)
-      
-      try {
-        const tx = await contract.participateInTrial(trialId)
-        await tx.wait()
-        alert("Successfully participated in the trial!")
-        fetchUserRewards()
-      } catch (error) {
-        console.error("Error participating in trial:", error)
-        alert("Failed to participate in the trial. Please try again.")
-      }
+    if (!provider || !account) return
+    
+    try {
+      const contract = await getContractInterface(provider)
+      const tx = await contract.participateInTrial(trialId)
+      await tx.wait()
+      alert("Successfully participated in the trial!")
+      fetchUserRewards()
+    } catch (error) {
+      console.error("Error participating in trial:", error)
+      alert("Failed to participate in the trial. Please try again.")
     }
   }
 
@@ -89,7 +84,7 @@ export default function Dashboard() {
       
       <div className="bg-white shadow rounded-lg p-6 mb-8">
         <h2 className="text-xl font-semibold mb-2">Your Rewards Balance</h2>
-        <p className="text-3xl font-bold text-primary">{userRewards} tokens</p>
+        <p className="text-3xl font-bold text-primary">{userRewards} ETH</p>
       </div>
       
       <h2 className="text-2xl font-semibold mb-4">Available Clinical Trials</h2>
@@ -99,7 +94,7 @@ export default function Dashboard() {
             <div className="p-6">
               <h3 className="text-xl font-semibold mb-2">{trial.name}</h3>
               <p className="text-gray-600 mb-4">{trial.description}</p>
-              <p className="text-lg font-medium mb-4">Reward: {trial.reward} tokens</p>
+              <p className="text-lg font-medium mb-4">Reward: {trial.reward} ETH</p>
               <button
                 onClick={() => participateInTrial(trial.id)}
                 className="w-full bg-primary text-white font-medium py-2 px-4 rounded hover:bg-primary/90 transition-colors"

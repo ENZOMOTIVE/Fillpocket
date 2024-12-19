@@ -23,7 +23,7 @@ export function Navbar() {
               Home
             </Link>
             <Link
-              href="/create-trial"
+              href="/clinical-trail"
               className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 hover:text-primary"
             >
               Create Trial
