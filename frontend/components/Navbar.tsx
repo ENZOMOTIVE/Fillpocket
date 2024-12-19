@@ -12,7 +12,7 @@ export function Navbar() {
               className="flex items-center gap-2 text-primary hover:text-primary/80"
             >
               <BeakerIcon className="h-6 w-6" />
-              <span className="font-semibold text-xl">Clinical Trials Platform</span>
+              <span className="font-semibold text-xl">Fill Pocket: A Reward Based Clinical Trial</span>
             </Link>
           </div>
           <div className="flex space-x-8">

@@ -69,34 +69,28 @@ export default function Dashboard() {
   }
 
   const participateInTrial = async (trialId: number) => {
-    if (!provider || !account) return
-    
     try {
-      const contract = await getContractInterface(provider)
-      const tx = await contract.participateInTrial(trialId)
-      await tx.wait()
-      alert("Successfully participated!")
-      fetchUserRewards()
+      alert(`Simulating participation in trial with ID: ${trialId}`);
+      // Simulate updating rewards or state
+      fetchUserRewards();
     } catch (error) {
-      console.error("Error participating:", error)
-      alert("Failed to participate. Please try again.")
+      console.error("Error in participation simulation:", error);
+      alert("Failed to participate. Please try again.");
     }
-  }
+  };
+  
 
   const claimRewards = async () => {
-    if (!provider || !account) return
-    
     try {
-      const contract = await getContractInterface(provider)
-      const tx = await contract.claimRewards()
-      await tx.wait()
-      alert("Rewards claimed successfully!")
-      fetchUserRewards()
+      alert("Simulating reward claim...");
+      // Simulate updating rewards or state
+      setUserRewards('0'); // Assuming rewards are reset to 0 after claiming
     } catch (error) {
-      console.error("Error claiming rewards:", error)
-      alert("Failed to claim rewards. Please try again.")
+      console.error("Error in reward claim simulation:", error);
+      alert("Failed to claim rewards. Please try again.");
     }
-  }
+  };
+  
 
   if (!account) {
     return (

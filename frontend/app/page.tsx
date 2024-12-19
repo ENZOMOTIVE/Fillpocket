@@ -18,8 +18,12 @@ export default function Home() {
     <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-gray-50">
       <div className="max-w-3xl mx-auto text-center">
         <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl md:text-6xl">
-          Welcome to Clinical Trials Platform
+          Contribute-Earn-Belief
         </h1>
+        <video className="w-full max-w-xl mx-auto" autoPlay loop muted playsInline>
+  <source src="/logo.mp4" type="video/mp4" />
+</video>
+
         <p className="mt-3 text-xl text-gray-500 sm:mt-4">
           Connect your wallet to participate in clinical trials and earn rewards
         </p>
