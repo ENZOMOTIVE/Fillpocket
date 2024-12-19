@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.26;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -25,10 +25,14 @@ contract ClinicalTrialsPlatform is Ownable {
     mapping(uint256 => ClinicalTrial) public trials;
     mapping(address => uint256) public userRewards;
 
+    // Array to keep track of all trial IDs
+    uint256[] private allTrialIds;
+
     event TrialCreated(uint256 indexed trialId, address indexed creator, string name, uint256 reward);
     event UserParticipated(uint256 indexed trialId, address indexed user);
     event ReviewSubmitted(uint256 indexed trialId, address indexed user, string review);
     event RewardDistributed(address indexed user, uint256 amount);
+    event TrialStatusUpdated(uint256 indexed trialId, bool isActive);
 
     constructor(address _rewardToken) Ownable(msg.sender) {
         rewardToken = IERC20(_rewardToken);
@@ -48,6 +52,9 @@ contract ClinicalTrialsPlatform is Ownable {
         newTrial.description = _description;
         newTrial.reward = _reward;
         newTrial.isActive = true;
+
+        // Add to array of trial IDs
+        allTrialIds.push(newTrialId);
 
         require(rewardToken.transferFrom(msg.sender, address(this), _reward), "Failed to transfer reward tokens");
 
@@ -85,6 +92,32 @@ contract ClinicalTrialsPlatform is Ownable {
         emit RewardDistributed(msg.sender, rewardAmount);
     }
 
+    // New function to get all trial IDs
+    function getAllTrialIds() external view returns (uint256[] memory) {
+        return allTrialIds;
+    }
+
+    // New function to get active trial IDs
+    function getActiveTrialIds() external view returns (uint256[] memory) {
+        uint256[] memory activeIds = new uint256[](allTrialIds.length);
+        uint256 activeCount = 0;
+
+        for (uint256 i = 0; i < allTrialIds.length; i++) {
+            if (trials[allTrialIds[i]].isActive) {
+                activeIds[activeCount] = allTrialIds[i];
+                activeCount++;
+            }
+        }
+
+        // Resize array to actual count of active trials
+        uint256[] memory result = new uint256[](activeCount);
+        for (uint256 i = 0; i < activeCount; i++) {
+            result[i] = activeIds[i];
+        }
+
+        return result;
+    }
+
     function getTrialDetails(uint256 _trialId) external view returns (
         uint256 id,
         address creator,
@@ -109,11 +142,23 @@ contract ClinicalTrialsPlatform is Ownable {
         return userRewards[_user];
     }
 
+    // New function to set trial status
+    function setTrialStatus(uint256 _trialId, bool _isActive) external {
+        require(msg.sender == trials[_trialId].creator || msg.sender == owner(), "Not authorized");
+        trials[_trialId].isActive = _isActive;
+        emit TrialStatusUpdated(_trialId, _isActive);
+    }
+
     function setRewardToken(address _newRewardToken) external onlyOwner {
         rewardToken = IERC20(_newRewardToken);
     }
 
     function withdrawUnusedRewards(uint256 _amount) external onlyOwner {
         require(rewardToken.transfer(owner(), _amount), "Failed to withdraw unused rewards");
+    }
+
+    // New function to get total number of trials
+    function getTotalTrials() external view returns (uint256) {
+        return _trialIds.current();
     }
 }

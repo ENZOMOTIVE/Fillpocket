@@ -10,12 +10,15 @@ interface Trial {
   name: string
   description: string
   reward: string
+  isActive: boolean
 }
 
 export default function Dashboard() {
   const { account, provider } = useWallet()
   const [trials, setTrials] = useState<Trial[]>([])
   const [userRewards, setUserRewards] = useState<string>('0')
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (account && provider) {
@@ -27,22 +30,37 @@ export default function Dashboard() {
   const fetchTrials = async () => {
     if (!provider || !account) return
     
+    setLoading(true)
+    setError(null)
     try {
       const contract = await getContractInterface(provider)
-      const availableTrialIds = await contract.getAllTrials()
-      const trialPromises = availableTrialIds.map(async (id: bigint) => {
-        const trialDetails = await contract.getTrialDetails(id)
-        return {
-          id: Number(trialDetails.id),
-          name: trialDetails.name,
-          description: trialDetails.description,
-          reward: formatEther(trialDetails.reward)
+      const trialIds = await contract.getAllTrialIds()
+      
+      const trialPromises = trialIds.map(async (id: bigint) => {
+        try {
+          const details = await contract.getTrialDetails(id)
+          return {
+            id: Number(details.id),
+            name: details.name,
+            description: details.description,
+            reward: formatEther(details.reward),
+            isActive: details.isActive
+          }
+        } catch (error) {
+          console.error(`Error fetching trial ${id}:`, error)
+          return null
         }
       })
-      const fetchedTrials = await Promise.all(trialPromises)
+      
+      const fetchedTrials = (await Promise.all(trialPromises))
+        .filter((trial): trial is Trial => trial !== null && trial.isActive)
+      
       setTrials(fetchedTrials)
     } catch (error) {
       console.error("Error fetching trials:", error)
+      setError("Failed to load trials. Please try again.")
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -54,7 +72,7 @@ export default function Dashboard() {
       const rewards = await contract.getUserRewards(account)
       setUserRewards(formatEther(rewards))
     } catch (error) {
-      console.error("Error fetching user rewards:", error)
+      console.error("Error fetching rewards:", error)
       setUserRewards('0')
     }
   }
@@ -66,48 +84,77 @@ export default function Dashboard() {
       const contract = await getContractInterface(provider)
       const tx = await contract.participateInTrial(trialId)
       await tx.wait()
-      alert("Successfully participated in the trial!")
+      alert("Successfully participated!")
+      fetchTrials()
       fetchUserRewards()
     } catch (error) {
-      console.error("Error participating in trial:", error)
-      alert("Failed to participate in the trial. Please try again.")
+      console.error("Error participating:", error)
+      alert("Failed to participate. Please try again.")
+    }
+  }
+
+  const claimRewards = async () => {
+    if (!provider || !account) return
+    
+    try {
+      const contract = await getContractInterface(provider)
+      const tx = await contract.claimRewards()
+      await tx.wait()
+      alert("Rewards claimed successfully!")
+      fetchUserRewards()
+    } catch (error) {
+      console.error("Error claiming rewards:", error)
+      alert("Failed to claim rewards. Please try again.")
     }
   }
 
   if (!account) {
-    return <p className="text-center mt-8">Please connect your wallet to view your dashboard.</p>
+    return <p className="text-center mt-8">Please connect your wallet to continue.</p>
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">User Dashboard</h1>
+    <div className="p-4">
+      <h1 className="text-2xl font-bold mb-4">Clinical Trials Dashboard</h1>
       
-      <div className="bg-white shadow rounded-lg p-6 mb-8">
-        <h2 className="text-xl font-semibold mb-2">Your Rewards Balance</h2>
-        <p className="text-3xl font-bold text-primary">{userRewards} ETH</p>
+      {error && (
+        <p className="text-red-500 mb-4">{error}</p>
+      )}
+      
+      <div className="mb-6 p-4 border rounded">
+        <h2 className="text-xl mb-2">Your Rewards</h2>
+        <p className="text-lg mb-2">{userRewards} CELO</p>
+        {parseFloat(userRewards) > 0 && (
+          <button 
+            onClick={claimRewards}
+            className="bg-green-500 text-white px-4 py-2 rounded"
+          >
+            Claim Rewards
+          </button>
+        )}
       </div>
+
+      <h2 className="text-xl mb-4">Available Trials</h2>
       
-      <h2 className="text-2xl font-semibold mb-4">Available Clinical Trials</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {trials.map((trial) => (
-          <div key={trial.id} className="bg-white shadow rounded-lg overflow-hidden">
-            <div className="p-6">
-              <h3 className="text-xl font-semibold mb-2">{trial.name}</h3>
-              <p className="text-gray-600 mb-4">{trial.description}</p>
-              <p className="text-lg font-medium mb-4">Reward: {trial.reward} ETH</p>
+      {loading ? (
+        <p>Loading trials...</p>
+      ) : trials.length > 0 ? (
+        <div className="grid gap-4 md:grid-cols-2">
+          {trials.map((trial) => (
+            <div key={trial.id} className="border p-4 rounded">
+              <h3 className="font-bold">{trial.name}</h3>
+              <p className="my-2">{trial.description}</p>
+              <p className="mb-2">Reward: {trial.reward} CELO</p>
               <button
                 onClick={() => participateInTrial(trial.id)}
-                className="w-full bg-primary text-white font-medium py-2 px-4 rounded hover:bg-primary/90 transition-colors"
+                className="bg-blue-500 text-white px-4 py-2 rounded"
               >
                 Participate
               </button>
             </div>
-          </div>
-        ))}
-      </div>
-      
-      {trials.length === 0 && (
-        <p className="text-center text-gray-600 mt-8">No clinical trials available at the moment.</p>
+          ))}
+        </div>
+      ) : (
+        <p>No active trials available.</p>
       )}
     </div>
   )

@@ -58,44 +58,58 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.ethereum) {
-      const { ethereum } = window;
-  
+      const { ethereum } = window
+
       // Handle account changes
       ethereum.on?.('accountsChanged', async (accounts: string[]) => {
         if (accounts.length === 0) {
-          setAccount(null);
-          setProvider(null);
-          setSigner(null);
+          setAccount(null)
+          setProvider(null)
+          setSigner(null)
         } else {
-          setAccount(accounts[0]);
-          const browserProvider = new BrowserProvider(ethereum);
-          const newSigner = await browserProvider.getSigner();
-          setProvider(browserProvider);
-          setSigner(newSigner);
+          setAccount(accounts[0])
+          const browserProvider = new BrowserProvider(ethereum)
+          const newSigner = await browserProvider.getSigner()
+          setProvider(browserProvider)
+          setSigner(newSigner)
         }
-      });
-  
+      })
+
       // Check if already connected
       ethereum
         .request?.({ method: 'eth_accounts' })
         .then(async (accounts: string[]) => {
           if (accounts.length > 0) {
-            const browserProvider = new BrowserProvider(ethereum);
-            const newSigner = await browserProvider.getSigner();
-            setProvider(browserProvider);
-            setSigner(newSigner);
-            setAccount(accounts[0]);
+            const browserProvider = new BrowserProvider(ethereum)
+            const newSigner = await browserProvider.getSigner()
+            setProvider(browserProvider)
+            setSigner(newSigner)
+            setAccount(accounts[0])
           }
         })
-        .catch((error) => console.error('Failed to fetch accounts:', error));
-    }
-  
-    return () => {
-      if (typeof window !== 'undefined' && window.ethereum) {
-        window.ethereum.removeAllListeners?.('accountsChanged');
+        .catch((error) => console.error('Failed to fetch accounts:', error))
+
+      return () => {
+        if (typeof window !== 'undefined' && window.ethereum) {
+          window.ethereum.removeAllListeners?.('accountsChanged')
+        }
       }
-    };
-  }, []);
-  
+    }
+  }, [])
+
+  const value = {
+    account,
+    provider,
+    signer,
+    connect,
+    switchNetwork,
+  }
+
+  return (
+    <WalletContext.Provider value={value}>
+      {children}
+    </WalletContext.Provider>
+  )
+}
 
 export const useWallet = () => useContext(WalletContext)

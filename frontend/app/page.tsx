@@ -3,6 +3,14 @@
 import { useWallet } from '@/components/Providers'
 import { ArrowRightIcon } from '@heroicons/react/24/outline'
 
+const CELO_ALFAJORES_NETWORK = {
+  chainId: '0xaef3', // 44787 in decimal
+  chainName: 'Celo Alfajores Testnet',
+  nativeCurrency: { name: 'Celo', symbol: 'CELO', decimals: 18 },
+  rpcUrls: ['https://alfajores-forno.celo-testnet.org'],
+  blockExplorerUrls: ['https://alfajores-blockscout.celo-testnet.org/'],
+}
+
 export default function Home() {
   const { account, connect, switchNetwork } = useWallet()
 
@@ -32,10 +40,10 @@ export default function Home() {
           )}
           
           <button
-            onClick={() => switchNetwork('0x1')}
+            onClick={() => switchNetwork(CELO_ALFAJORES_NETWORK.chainId)}
             className="inline-flex items-center justify-center px-6 py-3 border border-gray-200 rounded-md bg-white text-sm font-medium text-gray-900 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
           >
-            Switch to Ethereum Mainnet
+            Switch to Celo Alfajores Testnet
           </button>
         </div>
 
