@@ -1,14 +1,17 @@
 import { Navbar } from '@/components/Navbar'
 import { Providers } from '@/components/Providers'
 import './globals.css'
+import { Inter } from 'next/font/google'
+
+const inter = Inter({ subsets: ['latin'] })
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body>
+    <html lang="en" className={inter.className}>
+      <body className="min-h-screen bg-background">
         <Providers>
           <Navbar />
-          <main className="container mx-auto mt-4 px-4">{children}</main>
+          {children}
         </Providers>
       </body>
     </html>

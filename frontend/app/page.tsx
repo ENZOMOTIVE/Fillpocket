@@ -1,29 +1,50 @@
 'use client'
 
 import { useWallet } from '@/components/Providers'
+import { ArrowRightIcon } from '@heroicons/react/24/outline'
 
 export default function Home() {
   const { account, connect, switchNetwork } = useWallet()
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen py-2">
-      <h1 className="text-4xl font-bold mb-8">Welcome to Clinical Trials Platform</h1>
-      {!account ? (
-        <button
-          onClick={connect}
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-        >
-          Connect Wallet
-        </button>
-      ) : (
-        <p className="mb-4">Connected: {account}</p>
-      )}
-      <button
-        onClick={() => switchNetwork('0x1')} // Ethereum Mainnet
-        className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mt-4"
-      >
-        Switch to Ethereum Mainnet
-      </button>
+    <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-gray-50">
+      <div className="max-w-3xl mx-auto text-center">
+        <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl md:text-6xl">
+          Welcome to Clinical Trials Platform
+        </h1>
+        <p className="mt-3 text-xl text-gray-500 sm:mt-4">
+          Connect your wallet to participate in clinical trials and earn rewards
+        </p>
+        
+        <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+          {!account ? (
+            <button
+              onClick={connect}
+              className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+            >
+              Connect Wallet
+              <ArrowRightIcon className="ml-2 -mr-1 h-5 w-5" />
+            </button>
+          ) : (
+            <div className="inline-flex items-center px-6 py-3 border border-gray-200 rounded-md bg-white text-sm font-medium text-gray-900">
+              Connected: {account.slice(0, 6)}...{account.slice(-4)}
+            </div>
+          )}
+          
+          <button
+            onClick={() => switchNetwork('0x1')}
+            className="inline-flex items-center justify-center px-6 py-3 border border-gray-200 rounded-md bg-white text-sm font-medium text-gray-900 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+          >
+            Switch to Ethereum Mainnet
+          </button>
+        </div>
+
+        {account && (
+          <div className="mt-8 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-primary bg-primary/10">
+            Ready to participate in clinical trials
+          </div>
+        )}
+      </div>
     </div>
   )
 }

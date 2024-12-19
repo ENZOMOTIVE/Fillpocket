@@ -1,82 +1,119 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useWallet } from '@/components/Providers'
+import { getContractInterface } from '@/utils/contractInterface'
+import { ethers } from 'ethers'
 
-// Mock data for available trials and rewards
-const mockTrials = [
-  { id: 1, name: 'Trial A', reward: 100 },
-  { id: 2, name: 'Trial B', reward: 150 },
-  { id: 3, name: 'Trial C', reward: 200 },
-]
+interface Trial {
+  id: number
+  name: string
+  description: string
+  reward: number
+}
 
 export default function Dashboard() {
   const { account } = useWallet()
-  const [review, setReview] = useState('')
-  const [reviews, setReviews] = useState<string[]>([])
+  const [trials, setTrials] = useState<Trial[]>([])
+  const [userRewards, setUserRewards] = useState<number>(0)
 
-  const submitReview = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (review.trim()) {
-      setReviews([...reviews, review])
-      setReview('')
-      // Here you would typically store the review on the blockchain
+  useEffect(() => {
+    if (account) {
+      fetchTrials()
+      fetchUserRewards()
+    }
+  }, [account])
+
+  const fetchTrials = async () => {
+    if (typeof window.ethereum !== 'undefined') {
+      const provider = new ethers.providers.Web3Provider(window.ethereum)
+      const contract = getContractInterface(provider)
+      
+      try {
+        const availableTrialIds = await contract.getAvailableTrials()
+        const trialPromises = availableTrialIds.map(async (id: number) => {
+          const trialDetails = await contract.getTrialDetails(id)
+          return {
+            id: trialDetails.id.toNumber(),
+            name: trialDetails.name,
+            description: trialDetails.description,
+            reward: ethers.utils.formatEther(trialDetails.reward)
+          }
+        })
+        const fetchedTrials = await Promise.all(trialPromises)
+        setTrials(fetchedTrials)
+      } catch (error) {
+        console.error("Error fetching trials:", error)
+      }
+    }
+  }
+
+  const fetchUserRewards = async () => {
+    if (typeof window.ethereum !== 'undefined' && account) {
+      const provider = new ethers.providers.Web3Provider(window.ethereum)
+      const contract = getContractInterface(provider)
+      
+      try {
+        const rewards = await contract.getUserRewards(account)
+        setUserRewards(ethers.utils.formatEther(rewards))
+      } catch (error) {
+        console.error("Error fetching user rewards:", error)
+      }
+    }
+  }
+
+  const participateInTrial = async (trialId: number) => {
+    if (typeof window.ethereum !== 'undefined') {
+      const provider = new ethers.providers.Web3Provider(window.ethereum)
+      const contract = getContractInterface(provider)
+      
+      try {
+        const tx = await contract.participateInTrial(trialId)
+        await tx.wait()
+        alert("Successfully participated in the trial!")
+        fetchUserRewards()
+      } catch (error) {
+        console.error("Error participating in trial:", error)
+        alert("Failed to participate in the trial. Please try again.")
+      }
     }
   }
 
   if (!account) {
-    return <p>Please connect your wallet to view your dashboard.</p>
+    return <p className="text-center mt-8">Please connect your wallet to view your dashboard.</p>
   }
 
   return (
-    <div className="space-y-8">
-      <h1 className="text-2xl font-bold">User Dashboard</h1>
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-8">User Dashboard</h1>
       
-      <div>
-        <h2 className="text-xl font-semibold mb-2">Available Clinical Trials</h2>
-        <ul className="space-y-2">
-          {mockTrials.map((trial) => (
-            <li key={trial.id} className="bg-gray-100 p-4 rounded">
-              <span className="font-medium">{trial.name}</span> - Reward: {trial.reward} tokens
-            </li>
-          ))}
-        </ul>
-      </div>
-      
-      <div>
+      <div className="bg-white shadow rounded-lg p-6 mb-8">
         <h2 className="text-xl font-semibold mb-2">Your Rewards Balance</h2>
-        <p className="text-2xl font-bold">500 tokens</p>
+        <p className="text-3xl font-bold text-primary">{userRewards} tokens</p>
       </div>
       
-      <div>
-        <h2 className="text-xl font-semibold mb-2">Submit a Review</h2>
-        <form onSubmit={submitReview} className="space-y-2">
-          <textarea
-            value={review}
-            onChange={(e) => setReview(e.target.value)}
-            className="w-full px-3 py-2 border rounded"
-            placeholder="Write your review here..."
-            required
-          ></textarea>
-          <button
-            type="submit"
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-          >
-            Submit Review
-          </button>
-        </form>
+      <h2 className="text-2xl font-semibold mb-4">Available Clinical Trials</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {trials.map((trial) => (
+          <div key={trial.id} className="bg-white shadow rounded-lg overflow-hidden">
+            <div className="p-6">
+              <h3 className="text-xl font-semibold mb-2">{trial.name}</h3>
+              <p className="text-gray-600 mb-4">{trial.description}</p>
+              <p className="text-lg font-medium mb-4">Reward: {trial.reward} tokens</p>
+              <button
+                onClick={() => participateInTrial(trial.id)}
+                className="w-full bg-primary text-white font-medium py-2 px-4 rounded hover:bg-primary/90 transition-colors"
+              >
+                Participate
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
       
-      <div>
-        <h2 className="text-xl font-semibold mb-2">Your Reviews</h2>
-        <ul className="space-y-2">
-          {reviews.map((r, index) => (
-            <li key={index} className="bg-gray-100 p-4 rounded">
-              {r}
-            </li>
-          ))}
-        </ul>
-      </div>
+      {trials.length === 0 && (
+        <p className="text-center text-gray-600 mt-8">No clinical trials available at the moment.</p>
+      )}
     </div>
   )
 }

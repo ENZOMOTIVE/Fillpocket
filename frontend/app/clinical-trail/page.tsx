@@ -1,19 +1,19 @@
 'use client'
 
-import { useState } from "react"
-import {useWallet} from '@/components/Providers'
+import { useState } from 'react'
+import { useWallet } from '@/components/Providers'
 
 export default function CreateTrial() {
-  const {account} = useWallet()
+  const { account } = useWallet()
   const [trialData, setTrialData] = useState({
     name: '',
-    description:'',
+    description: '',
     reward: '',
   })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    //Here smart contract interaction will happen
+    // Here you would interact with your smart contract to create the trial
     console.log('Creating trial:', trialData)
   }
 
