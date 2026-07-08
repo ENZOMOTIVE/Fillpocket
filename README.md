@@ -70,12 +70,3 @@ Celo-Alfajores-testnet: [https://alfajores.celoscan.io/address/0xe3f292f78b90127
 ---
 
 **Fill Pocket** is dedicated to transforming clinical trials by creating a transparent, engag
-
-## Project Metadata
-
-| Field | Details |
-| --- | --- |
-| Repository | `ENZOMOTIVE/Fillpocket` |
-| Categories | `Full Stack`, `Protocol` |
-| Primary stack | Next.js, React, Node.js, TypeScript, JavaScript, Solidity, CSS |
-
