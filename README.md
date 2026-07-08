@@ -1,5 +1,11 @@
 # Fill Pocket: A Reward-Driven Clinical Trial Ecosystem
 
+
+## Project Tags
+
+- `Full Stack`
+- `Protocol`
+
 ## Introduction
 **Fill Pocket** is a revolutionary platform designed to transform the biotechnology sector by improving and expediting the clinical trial process. This platform promotes user engagement through a reward-based system while providing pharmaceutical businesses and organizations an additional layer of trust when introducing new pharmaceuticals. 
 
